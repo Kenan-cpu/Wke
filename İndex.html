@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerçekçi Yüz Montajı</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Gerçekçi Yüze Köpek Montajı</h2>
+    
+    <input type="file" id="imageUpload" accept="image/*"><br><br>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        async function loadModels() {
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
+        }
+
+        async function handleImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = async function() {
+                    const canvas = document.getElementById('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    // Yüz tespiti
+                    const detections = await faceapi.detectSingleFace(img).withFaceLandmarks();
+                    if (!detections) {
+                        alert("Yüz algılanamadı!");
+                        return;
+                    }
+
+                    const { x, y, width, height } = detections.detection.box;
+
+                    // Köpek yüzü ekleme
+                    const dogFace = new Image();
+                    dogFace.src = "dog.png"; // Şeffaf bir köpek yüzü PNG kullan
+                    dogFace.onload = function() {
+                        ctx.drawImage(dogFace, x - 20, y - 30, width + 40, height + 40);
+                    };
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('imageUpload').addEventListener('change', handleImage);
+        loadModels();
+    </script>
+
+</body>
+  </html>
